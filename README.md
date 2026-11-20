@@ -4,6 +4,8 @@ A small computer-vision project: detect **helmets and safety vests** on construc
 
 Built end to end as a learning project: dataset selection, fine-tuning on free Colab GPU, evaluation on a held-out test set, error analysis on my own images, and a Streamlit demo.
 
+**Live demo:** https://huggingface.co/spaces/suhani006/helmet-vest-detection (Hugging Face Space; the first load can take a few seconds). The Space downloads the model and sample photos from this repository on start-up.
+
 > Only public data and open-source models are used. No company data or code.
 
 ## Problem
@@ -122,6 +124,8 @@ The tests check the *rule*, not the model. Model quality is measured by the metr
 ```
 app.py              Streamlit demo
 verdict.py          Safe / Not-safe logic (unit tested)
+space/              Gradio version of the demo used on Hugging Face Spaces
+eval/               hand-labelled ground truth and evaluation scripts
 tests/              unit tests (run in CI)
 .github/workflows/  CI configuration
 models/best_n.pt    fine-tuned YOLOv8n weights
