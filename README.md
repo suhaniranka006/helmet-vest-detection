@@ -66,6 +66,28 @@ A bigger inference size catches many more small / far-away people. I then looked
 | ![](docs/safe_5_workers.jpg) | 5 of 5 workers with helmet + vest: all SAFE. |
 | ![](docs/far_640_nothing_found.jpg) ![](docs/far_1280_partial.jpg) | Workers far away behind railings: nothing found at 640, 2 of 4 found at 1280. |
 
+## Ground-truth evaluation of the final verdicts (39 hand-labelled photos)
+Box metrics (mAP) do not say how good the final Safe / Not-safe answer is, so I labelled 39 stock photos by hand and compared. Labels are **counts per image** (how many people are fully equipped / not equipped / unsure), following `eval/LABELING_RULES.md` (hi-vis clothing counts as a vest, a cap is not a helmet). One crowd photo that could not be counted was removed. Run it with `python eval/run_eval.py`.
+
+| Metric | 640 px, person conf 0.40 | 1280 px, person conf 0.20 |
+|---|---|---|
+| People found (recall) | 0.84 (94 of 103 predicted) | 0.98 |
+| Extra people predicted | 7 | 31 |
+| "Image contains an unsafe person": precision | 0.92 | 0.85 |
+| Same, recall | 0.92 (22 of 24) | 0.92 |
+| Image-level accuracy | 0.90 | 0.85 |
+| False SAFE (SAFE said, not truly equipped) | 0 of 14 SAFE | 2 of 14 SAFE |
+| Fully safe photos wrongly flagged NOT SAFE | 2 of 11 | 4 of 11 |
+
+How to read this honestly:
+- Only **39 images**; 22 of 24 has a wide 95% interval (about 0.74 to 0.98). Treat 0.92 as "around 0.9, not certain".
+- The set is skewed: 24 of 39 photos contain an unsafe person. A system that always answers NOT SAFE would score 1.0 recall but only about 0.62 precision and accuracy.
+- Ground truth is a **count**, not one box per person, so a NOT SAFE for the wrong person still counts as a hit. The numbers are somewhat optimistic.
+- 16 of these photos are the ones I used earlier while choosing the settings (1280 px, person confidence 0.20), so the real performance on unseen photos is probably a bit lower.
+- Part of the "extra people" count may be small background people I did not label.
+- The app is cautious: it said SAFE for only 14 people, while 42 people were truly fully equipped. It is weak at confirming safety and often answers UNCERTAIN.
+- Trade-off: 1280 px finds more people (0.84 to 0.98) but adds false alarms and 2 false SAFE verdicts, so 640 px is the default.
+
 ## Limitations (what fails, and why)
 - **Colour looks like a vest.** A worker with an orange hood and no vest was marked SAFE (`docs/error_orange_hood_as_vest.jpg`). A bright logo with no person was first detected as "Vest" (fixed by requiring a person box).
 - **Overlapping people.** Two workers standing next to each other, both fully equipped: one was marked NOT SAFE (`docs/error_false_not_safe.jpg`). Assigning PPE by box centre is a simple rule and can mix up neighbours.
