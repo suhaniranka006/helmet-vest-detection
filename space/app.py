@@ -1,19 +1,52 @@
 """Helmet & Safety Vest Detection - Gradio demo for Hugging Face Spaces.
 
 Same logic as the Streamlit app (app.py in the repo root); only the screen code differs.
-Expects verdict.py, models/best_n.pt and samples/ next to this file.
+verdict.py, models/best_n.pt and samples/ are downloaded from the GitHub repo on first start.
 """
 import os
+import urllib.request
 
-import gradio as gr
-from PIL import Image, ImageDraw
-from ultralytics import YOLO
-
-from verdict import assign_ppe, decide
+import spaces  # ZeroGPU helper; must be imported before torch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+RAW = "https://raw.githubusercontent.com/suhaniranka006/helmet-vest-detection/main/"
+
+
+def fetch(rel):
+    """Download a project file from the GitHub repo if it is not here yet."""
+    dst = os.path.join(HERE, rel)
+    if not os.path.exists(dst):
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        urllib.request.urlretrieve(RAW + rel, dst)
+
+
+fetch("verdict.py")
+fetch("models/best_n.pt")
+for _id in ["18111488", "8961260", "6082416", "28913835", "12314551", "11293626", "11565004",
+            "31091544", "31112238", "31199588", "33914927", "34053335", "4480982",
+            "25461690", "29114485", "34965713"]:
+    try:
+        fetch(f"samples/{_id}.jpg")
+    except Exception:
+        pass  # a missing sample must not stop the app
+
+import gradio as gr  # noqa: E402
+from PIL import Image, ImageDraw  # noqa: E402
+from ultralytics import YOLO  # noqa: E402
+
+from verdict import assign_ppe, decide  # noqa: E402
+
 PPE_MODEL = YOLO(os.path.join(HERE, "models", "best_n.pt"))   # fine-tuned by me
 PERSON_MODEL = YOLO("yolov8n.pt")                              # COCO, auto-downloaded
+
+
+@spaces.GPU
+def _gpu_marker():
+    """ZeroGPU needs at least one @spaces.GPU function. The real work below runs on CPU
+    (YOLOv8n is small), so this is never called and uses no GPU quota."""
+    return 0
+
+
 COLOR = {"SAFE": "green", "NOT SAFE": "red", "UNCERTAIN": "orange"}
 SAMPLE_DIR = os.path.join(HERE, "samples")
 
@@ -24,8 +57,8 @@ def analyse(image, ppe_conf, person_conf, imgsz):
     image = image.convert("RGB")
     imgsz = int(imgsz)
 
-    ppe = PPE_MODEL.predict(image, conf=ppe_conf, imgsz=imgsz, verbose=False)[0]
-    per = PERSON_MODEL.predict(image, conf=person_conf, imgsz=imgsz, classes=[0], verbose=False)[0]
+    ppe = PPE_MODEL.predict(image, conf=ppe_conf, imgsz=imgsz, device="cpu", verbose=False)[0]
+    per = PERSON_MODEL.predict(image, conf=person_conf, imgsz=imgsz, classes=[0], device="cpu", verbose=False)[0]
     items = [(PPE_MODEL.names[int(c)], b.tolist(), float(s))
              for c, b, s in zip(ppe.boxes.cls, ppe.boxes.xyxy, ppe.boxes.conf)]
     persons = [b.tolist() for b in per.boxes.xyxy]
