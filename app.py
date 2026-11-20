@@ -11,9 +11,10 @@ import streamlit as st
 from PIL import Image, ImageDraw
 from ultralytics import YOLO
 
+from verdict import center_inside, decide  # pure logic, unit tested in tests/
+
 PPE_MODEL_PATH = "models/best_n.pt"   # our fine-tuned weights
 PERSON_MODEL_PATH = "yolov8n.pt"      # COCO weights (auto-downloaded by ultralytics)
-UNSAFE_CLASSES = {"No-Helmet", "No-Vest"}
 PERSON_CONF = 0.40
 VERDICT_COLOR = {"SAFE": "green", "NOT SAFE": "red", "UNCERTAIN": "orange"}
 
@@ -22,23 +23,6 @@ VERDICT_COLOR = {"SAFE": "green", "NOT SAFE": "red", "UNCERTAIN": "orange"}
 def load_models():
     return YOLO(PPE_MODEL_PATH), YOLO(PERSON_MODEL_PATH)
 
-
-def center_inside(box, person_box):
-    x1, y1, x2, y2 = box
-    cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
-    px1, py1, px2, py2 = person_box
-    return px1 <= cx <= px2 and py1 <= cy <= py2
-
-
-def decide(labels):
-    """Verdict for ONE person from the set of PPE labels found on them."""
-    if labels & UNSAFE_CLASSES:
-        return "NOT SAFE", ", ".join(sorted(labels & UNSAFE_CLASSES))
-    if {"Helmet", "Vest"} <= labels:
-        return "SAFE", "Helmet + Vest"
-    if labels & {"Helmet", "Vest"}:
-        return "UNCERTAIN", "only " + ", ".join(sorted(labels)) + " seen"
-    return "UNCERTAIN", "no PPE detected on this person"
 
 
 st.set_page_config(page_title="Helmet & Vest Detection", layout="wide")

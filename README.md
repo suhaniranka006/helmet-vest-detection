@@ -89,9 +89,19 @@ streamlit run app.py
 ```
 The first run downloads the COCO `yolov8n.pt` person model automatically. Use the sidebar to pick an inference size (640 / 960 / 1280) and confidence thresholds, and upload an image or pick one from `samples/`.
 
+## Tests
+The Safe / Not-safe rule lives in `verdict.py` (pure Python, no model needed) and has 19 unit tests in `tests/` covering the rule, the box-assignment geometry and the image-level summary. They run on every push through GitHub Actions.
+```bash
+python -m unittest discover -s tests -v
+```
+The tests check the *rule*, not the model. Model quality is measured by the metrics above.
+
 ## Repo layout
 ```
 app.py              Streamlit demo
+verdict.py          Safe / Not-safe logic (unit tested)
+tests/              unit tests (run in CI)
+.github/workflows/  CI configuration
 models/best_n.pt    fine-tuned YOLOv8n weights
 samples/            16 free Pexels photos for the demo
 docs/               result screenshots used in this README
