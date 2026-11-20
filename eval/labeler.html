@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ground-truth labeler</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2330;--mut:#5b6575;--line:#d9dde4;--acc:#1d5fd1}
+@media (prefers-color-scheme:dark){:root{--bg:#14171c;--card:#1d2128;--ink:#e8ebf0;--mut:#9aa4b2;--line:#2c323c;--acc:#6ea0ff}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}
+.help{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--mut);font-size:14px}
+.help b{color:var(--ink)}
+.bar{height:8px;background:var(--line);border-radius:4px;margin:12px 0}
+.bar>i{display:block;height:8px;background:var(--acc);border-radius:4px;width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+img{max-width:100%;max-height:68vh;display:block;margin:0 auto;border-radius:8px}
+.row{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;align-items:end}
+label{display:flex;flex-direction:column;font-size:13px;color:var(--mut);gap:4px}
+input[type=number]{width:110px;font-size:18px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input[type=text]{width:260px;font-size:15px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+button{font-size:15px;padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff}
+.meta{display:flex;justify-content:space-between;color:var(--mut);font-size:14px;margin:6px 2px 10px}
+.tot{font-size:14px;color:var(--mut)}
+</style></head><body><div class="wrap">
+<h1>Ground-truth labeler (40 images)</h1>
+<div class="help">Look at each photo and count <b>every person you can see</b>, even small or far-away ones.
+<br><b>Fully equipped</b> = helmet AND high-visibility vest both clearly visible.
+<br><b>Not equipped</b> = clearly missing the helmet or the vest (or both). A cap or hood is NOT a helmet.
+<br><b>Unsure</b> = you cannot tell (too small, hidden, cut off).
+<br>If there is nobody in the photo, leave all three at 0. Your answers save automatically in this browser. Click <b>Export CSV</b> at the end.</div>
+<div class="bar"><i id="pb"></i></div>
+<div class="meta"><span id="pos"></span><span id="done"></span></div>
+<div class="card">
+<img id="im" alt="photo to label">
+<div class="row">
+<label>Fully equipped<input type="number" id="eq" min="0" value="0"></label>
+<label>Not equipped<input type="number" id="ne" min="0" value="0"></label>
+<label>Unsure<input type="number" id="un" min="0" value="0"></label>
+<label>Note (optional)<input type="text" id="nt" placeholder="e.g. night, far away"></label>
+<span class="tot" id="tot"></span>
+</div>
+<div class="row"><button id="prev">Back</button><button class="p" id="next">Save and next</button><button id="exp">Export CSV</button></div>
+</div></div>
+<script>
+const IMAGES = ["11015459.jpg", "11139140.jpg", "11293626.jpg", "11565004.jpg", "12314551.jpg", "13319075.jpg", "14053428.jpg", "14761195.jpg", "15947456.jpg", "18111488.jpg", "19250066.jpg", "25461690.jpg", "28913835.jpg", "29114485.jpg", "29988954.jpg", "30674593.jpg", "31001269.jpg", "31091544.jpg", "31112238.jpg", "31199588.jpg", "31763537.jpg", "32826199.jpg", "33914927.jpg", "33982049.jpg", "34053335.jpg", "34965713.jpg", "35340753.jpg", "37636256.jpg", "37704234.jpg", "38043248.jpg", "38706756.jpg", "39212796.jpg", "40537869.jpg", "4480982.jpg", "4484152.jpg", "4575148.jpg", "6082416.jpg", "8487408.jpg", "8961260.jpg", "8961555.jpg"];
+const KEY = "gt_labels_v1";
+let data = {};
+try { data = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e) { data = {}; }
+let i = 0;
+const $ = id => document.getElementById(id);
+function show(){
+  const n = IMAGES[i];
+  $("im").src = "images/" + n;
+  const d = data[n] || {eq:0, ne:0, un:0, nt:""};
+  $("eq").value = d.eq; $("ne").value = d.ne; $("un").value = d.un; $("nt").value = d.nt || "";
+  $("pos").textContent = "Image " + (i+1) + " of " + IMAGES.length + "  (" + n + ")";
+  const done = Object.keys(data).length;
+  $("done").textContent = done + " labelled";
+  $("pb").style.width = (100*done/IMAGES.length) + "%";
+  upd();
+}
+function num(id){ const v = parseInt($(id).value, 10); return isNaN(v) || v < 0 ? 0 : v; }
+function upd(){ $("tot").textContent = "People total: " + (num("eq")+num("ne")+num("un")); }
+function save(){
+  data[IMAGES[i]] = {eq:num("eq"), ne:num("ne"), un:num("un"), nt:$("nt").value.replace(/[\r\n,]+/g," ")};
+  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e) {}
+}
+["eq","ne","un"].forEach(id => $(id).addEventListener("input", upd));
+$("next").onclick = () => { save(); if (i < IMAGES.length-1) i++; show(); };
+$("prev").onclick = () => { save(); if (i > 0) i--; show(); };
+$("exp").onclick = () => {
+  save();
+  const missing = IMAGES.filter(n => !data[n]);
+  if (missing.length && !confirm(missing.length + " images are not labelled yet. Export anyway?")) return;
+  let out = "image,people,fully_equipped,not_equipped,unsure,note\n";
+  IMAGES.forEach(n => { const d = data[n]; if (!d) return;
+    out += [n, d.eq+d.ne+d.un, d.eq, d.ne, d.un, d.nt].join(",") + "\n"; });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([out], {type:"text/csv"}));
+  a.download = "ground_truth.csv"; a.click();
+};
+show();
+</script></body></html>
