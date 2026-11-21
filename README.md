@@ -73,8 +73,8 @@ Box metrics (mAP) do not say how good the final Safe / Not-safe answer is, so I 
 
 | Metric | 640 px, person conf 0.40 | 1280 px, person conf 0.20 |
 |---|---|---|
-| People found (recall) | 0.84 (94 of 103 predicted) | 0.98 |
-| Extra people predicted | 7 | 31 |
+| People found (recall, count-based) | 0.84 | 0.98 |
+| Extra people predicted (predicted total vs 103 labelled) | 7 (94 predicted) | 31 (132 predicted) |
 | "Image contains an unsafe person": precision | 0.92 | 0.85 |
 | Same, recall | 0.92 (22 of 24) | 0.92 |
 | Image-level accuracy | 0.90 | 0.85 |
