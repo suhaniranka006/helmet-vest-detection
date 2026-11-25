@@ -113,6 +113,9 @@ streamlit run app.py
 ```
 The first run downloads the COCO `yolov8n.pt` person model automatically. Use the sidebar to pick an inference size (640 / 960 / 1280) and confidence thresholds, and upload an image or pick one from `samples/`.
 
+## Reproduce the training
+[`notebooks/helmet_vest_workflow.ipynb`](notebooks/helmet_vest_workflow.ipynb) runs everything on a free Colab T4 GPU: download the dataset, train YOLOv8n, evaluate on the test split, run the full pipeline on a photo, and run the ground-truth evaluation. [Open it in Colab](https://colab.research.google.com/github/suhaniranka006/helmet-vest-detection/blob/main/notebooks/helmet_vest_workflow.ipynb). You need your own Roboflow fork of the dataset and API key (kept in Colab Secrets). Re-running it from a clean notebook gave identical test numbers (fixed seed, deterministic mode).
+
 ## Tests
 The Safe / Not-safe rule lives in `verdict.py` (pure Python, no model needed) and has 19 unit tests in `tests/` covering the rule, the box-assignment geometry and the image-level summary. They run on every push through GitHub Actions.
 ```bash
@@ -123,6 +126,7 @@ The tests check the *rule*, not the model. Model quality is measured by the metr
 ## Repo layout
 ```
 app.py              Streamlit demo
+notebooks/          the Colab workflow: data, training, evaluation, verdict logic
 verdict.py          Safe / Not-safe logic (unit tested)
 space/              Gradio version of the demo used on Hugging Face Spaces
 eval/               hand-labelled ground truth and evaluation scripts
