@@ -117,9 +117,14 @@ The first run downloads the COCO `yolov8n.pt` person model automatically. Use th
 [`notebooks/helmet_vest_workflow.ipynb`](notebooks/helmet_vest_workflow.ipynb) runs everything on a free Colab T4 GPU: download the dataset, train YOLOv8n, evaluate on the test split, run the full pipeline on a photo, and run the ground-truth evaluation. [Open it in Colab](https://colab.research.google.com/github/suhaniranka006/helmet-vest-detection/blob/main/notebooks/helmet_vest_workflow.ipynb). You need your own Roboflow fork of the dataset and API key (kept in Colab Secrets). Re-running it from a clean notebook gave identical test numbers (fixed seed, deterministic mode).
 
 ## Tests
-The Safe / Not-safe rule lives in `verdict.py` (pure Python, no model needed) and has 19 unit tests in `tests/` covering the rule, the box-assignment geometry and the image-level summary. They run on every push through GitHub Actions.
+The Safe / Not-safe rule lives in `verdict.py` (pure Python, no model needed). `tests/` holds **72 tests**, run with pytest on every push through GitHub Actions:
+- 27 older `unittest`-style tests (the rule, the box assignment, and the evaluation metrics),
+- 45 pytest cases: tables of inputs with `parametrize`, a fixture, and an **exhaustive** check of all 16 label combinations (SAFE only when Helmet and Vest are present and no No-* label is).
+
+One test documents a known limitation: when two person boxes overlap, a helmet whose centre is inside both is given to both people.
 ```bash
-python -m unittest discover -s tests -v
+pip install -r requirements-dev.txt
+python -m pytest -v
 ```
 The tests check the *rule*, not the model. Model quality is measured by the metrics above.
 
